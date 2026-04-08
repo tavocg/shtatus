@@ -32,6 +32,33 @@ _has() {
   command -v "$1" >/dev/null 2>&1
 }
 
+_is_running() {
+  pattern="$1"
+
+  if [ -z "$pattern" ]; then
+    return 1
+  fi
+
+  case "$os" in
+  linux)
+    for proc in $(ps -A -o comm= 2>/dev/null); do
+      case "$proc" in
+      $pattern) return 0 ;;
+      esac
+    done
+    ;;
+  freebsd | openbsd)
+    for proc in $(ps -ax -o comm= 2>/dev/null); do
+      case "$proc" in
+      $pattern) return 0 ;;
+      esac
+    done
+    ;;
+  esac
+
+  return 1
+}
+
 _bat_status() {
   status=""
   for b in /sys/class/power_supply/BAT*; do
@@ -351,8 +378,7 @@ block_keyboard() {
     return
   fi
 
-  if _has "swaymsg"; then
-    # TODO: Check sway is actually running
+  if _has "swaymsg" && _is_running "sway"; then
     _keyboard_layout_swaymsg
     return
   fi
