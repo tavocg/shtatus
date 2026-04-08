@@ -5,8 +5,8 @@
 : "${SHTATUS_BLOCKS:=vol mic cpu ram net bat kb time date}"
 
 # Interval in seconds
-# The time to complete blocks is added to this interval,
-# so this is not exact.
+# (note: total loop time includes both this
+# delay and the time each block takes to run).
 : "${SHTATUS_INTERVAL:=0.5}"
 
 # Separator character
