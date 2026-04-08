@@ -93,7 +93,7 @@ block_date() {
 
 block_time() {
   fmt="$1"
-  [ -z "$fmt" ] && fmt="%I:%M%p"
+  [ -z "$fmt" ] && fmt="%I:%M %p"
   echo "󰥔 $(date "+$fmt")"
 }
 
