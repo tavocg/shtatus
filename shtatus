@@ -1,15 +1,15 @@
 #!/bin/sh
 
 # Choose what blocks to print
-: "${SHSTATUS_BLOCKS:=volume volmic cpu ram net bat kb time date}"
+: "${SHTATUS_BLOCKS:=volume volmic cpu ram net bat kb time date}"
 
 # Interval in seconds
 # The time to complete blocks is added to this interval,
 # so this is not exact.
-: "${SHSTATUS_INTERVAL:=0.5}"
+: "${SHTATUS_INTERVAL:=0.5}"
 
 # Separator character
-: "${SHSTATUS_SEPARATOR:=   }"
+: "${SHTATUS_SEPARATOR:=   }"
 
 _has() {
   command -v "$1" >/dev/null 2>&1
@@ -357,12 +357,12 @@ block_net() {
 
 while true; do
   status=""
-  for block in $SHSTATUS_BLOCKS; do
+  for block in $SHTATUS_BLOCKS; do
     v="$(block_"$block")"
     if [ "$v" ]; then
       case "$status" in
       "") status="$v" ;;
-      *) status="$status$SHSTATUS_SEPARATOR$v" ;;
+      *) status="$status$SHTATUS_SEPARATOR$v" ;;
       esac
     fi
   done
@@ -371,5 +371,5 @@ while true; do
 
   [ "$1" ] && exit
 
-  sleep "$SHSTATUS_INTERVAL"
+  sleep "$SHTATUS_INTERVAL"
 done

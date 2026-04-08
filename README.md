@@ -16,8 +16,8 @@ Print once for testing by passing any argument:
 ./shstatus 1
 ```
 
-You can limit the blocks with `SHSTATUS_BLOCKS`. For example, CPU only:
+You can limit the blocks with `SHTATUS_BLOCKS`. For example, CPU only:
 
 ```sh
-SHSTATUS_BLOCKS="cpu" ./shstatus
+SHTATUS_BLOCKS="cpu" ./shstatus
 ```
