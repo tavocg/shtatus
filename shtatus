@@ -260,18 +260,38 @@ block_mic() {
   _vol_by_type "mic"
 }
 
+_cpu_linux() {
+  while read -r cpu u1 n1 s1 i1 w1 irq1 sirq1 st1 _; do
+    break
+  done </proc/stat
+  sleep 0.3
+  while read -r cpu u2 n2 s2 i2 w2 irq2 sirq2 st2 _; do
+    break
+  done </proc/stat
+
+  idle1=$((i1 + w1))
+  idle2=$((i2 + w2))
+  total1=$((u1 + n1 + s1 + i1 + w1 + irq1 + sirq1 + st1))
+  total2=$((u2 + n2 + s2 + i2 + w2 + irq2 + sirq2 + st2))
+  totald=$((total2 - total1))
+  idled=$((idle2 - idle1))
+
+  [ "$totald" -gt 0 ] || return
+
+  busyd=$((totald - idled))
+  pct=$(((busyd * 100 + totald / 2) / totald))
+
+  if [ "$pct" -gt 99 ]; then
+    pct=99
+  fi
+
+  printf ' %02d%%\n' "$pct"
+}
+
 block_cpu() {
-  {
-    while read -r line; do
-      echo "$line"
-      break
-    done </proc/stat
-    sleep 0.3
-    while read -r line; do
-      echo "$line"
-      break
-    done </proc/stat
-  } | awk '/^cpu /{u=$2-u;s=$4-s;i=$5-i;w=$6-w}END{v=int(0.5+100*(u+s+w)/(u+s+i+w)); printf " %2d%%\n", (v>99?99:v)}'
+  case "$os" in
+  linux) _cpu_linux ;;
+  esac
 }
 
 _ram_linux() {
@@ -291,7 +311,7 @@ _ram_linux() {
   used=$((total - avail))
   whole=$((used / 1048576))
   tenths=$(((used % 1048576) * 10 / 1048576))
-  printf '%02d.%sG\n' "$whole" "$tenths"
+  printf ' %02d.%sG\n' "$whole" "$tenths"
 }
 
 block_ram() {
