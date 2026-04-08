@@ -1,0 +1,375 @@
+#!/bin/sh
+
+# Choose what blocks to print
+: "${SHSTATUS_BLOCKS:=volume volmic cpu ram net bat kb time date}"
+
+# Interval in seconds
+# The time to complete blocks is added to this interval,
+# so this is not exact.
+: "${SHSTATUS_INTERVAL:=0.5}"
+
+# Separator character
+: "${SHSTATUS_SEPARATOR:=   }"
+
+_has() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+_bat_status() {
+  status=""
+  for b in /sys/class/power_supply/BAT*; do
+    if [ -d "$b" ]; then
+      while read -r line; do
+        echo "$line"
+        break
+      done <"$b/status"
+      break
+    fi
+  done
+}
+
+_bat_val() {
+  col="$1"
+  total=0
+  batteries=0
+  for battery in /sys/class/power_supply/BAT*; do
+    if [ -r "$battery" ]; then
+      while read -r line; do
+        value="$line"
+      done <"$battery/$col"
+      total=$((value + total))
+      batteries=$((batteries + 1))
+    fi
+  done
+  [ "$batteries" -eq 0 ] && return
+  echo "$((total / batteries))"
+}
+
+block_bat() {
+  capacity="$(_bat_val capacity)"
+  [ -z "$capacity" ] && echo "󰚥" && return 0
+
+  # This is meant to be a constant string
+  # shellcheck disable=2194
+  case "1" in
+  $((capacity >= 98))) icon="󰁹" ;;
+  $((capacity >= 90))) icon="󰂂" ;;
+  $((capacity >= 80))) icon="󰂁" ;;
+  $((capacity >= 70))) icon="󰂀" ;;
+  $((capacity >= 60))) icon="󰁿" ;;
+  $((capacity >= 50))) icon="󰁾" ;;
+  $((capacity >= 40))) icon="󰁽" ;;
+  $((capacity >= 30))) icon="󰁼" ;;
+  $((capacity >= 20))) icon="󰁻" ;;
+  $((capacity >= 10))) icon="󰁺" ;;
+  $((capacity >= 0))) icon="󰂎" ;;
+  esac
+
+  if [ "$(_bat_status)" = "Charging" ]; then
+    case "$icon" in
+    "󰁹") icon="󰂅" ;;
+    "󰂂") icon="󰂋" ;;
+    "󰂁") icon="󰂊" ;;
+    "󰂀") icon="󰢞" ;;
+    "󰁿") icon="󰂉" ;;
+    "󰁾") icon="󰢝" ;;
+    "󰁽") icon="󰂈" ;;
+    "󰁼") icon="󰂇" ;;
+    "󰁻") icon="󰂆" ;;
+    "󰁺") icon="󰢜" ;;
+    "󰂎") icon="󰢟" ;;
+    esac
+  fi
+
+  echo "$icon"
+}
+
+block_date() {
+  fmt="$1"
+  [ -z "$fmt" ] && fmt="%a %Y-%m-%d"
+  echo "󰃮 $(date "+$fmt")"
+}
+
+block_time() {
+  fmt="$1"
+  [ -z "$fmt" ] && fmt="%I:%M%p"
+  echo "󰥔 $(date "+$fmt")"
+}
+
+_volume_amixer_by_type() {
+  type="$1"
+  [ -z "$type" ] && return
+  amixer get Master | while read -r line; do
+    case "$line" in
+    *Playback*%*on*)
+      vol="${line%%"%]"*}"
+      vol="${vol##*"["}"
+      echo "$vol"
+      break
+      ;;
+    esac
+  done
+}
+
+_volume_amixer() {
+  _volume_amixer_by_type "Master"
+}
+
+_volmic_amixer() {
+  _volume_amixer_by_type "Capture"
+}
+
+_volume_pactl_by_type() {
+  type="$1"
+  [ -z "$type" ] && return
+  pactl get-sink-volume "$type" | while read -r line; do
+    case "$line" in
+    "Volume"*)
+      lvl="${line%%%*}"
+      lvl="${lvl##* }"
+      echo "$lvl"
+      break
+      ;;
+    esac
+  done
+}
+
+_volume_pactl() {
+  _volume_pactl_by_type "@DEFAULT_SINK@"
+}
+
+_volmic_pactl() {
+  _volume_pactl_by_type "@DEFAULT_CAPTURE@"
+}
+
+_volume_wpctl_by_type() {
+  type="$1"
+  [ -z "$type" ] && return
+  wpctl get-volume "$type" | while read -r line; do
+    case "$line" in
+    "Volume: 1."*)
+      lvl="${line##* }"
+      echo "${lvl%%.*}${lvl##*.}"
+      break
+      ;;
+    "Volume"*)
+      lvl="${line##*.}"
+      echo "${lvl#0}"
+      break
+      ;;
+    esac
+  done
+}
+
+_volume_wpctl() {
+  _volume_wpctl_by_type "@DEFAULT_SINK@"
+}
+
+_volmic_wpctl() {
+  _volume_wpctl_by_type "@DEFAULT_CAPTURE@"
+}
+
+block_volume() {
+  vol=""
+  _backends="amixer pactl wpctl"
+  for backend in $_backends; do
+    if _has "$backend"; then
+      vol="$(_volume_"$backend")"
+      break
+    fi
+  done
+
+  [ -z "$vol" ] && return
+
+  case 1 in
+  $((vol >= 100))) bar="━━━━━━━━━━" ;;
+  $((vol >= 90))) bar="━━━━━━━━━─" ;;
+  $((vol >= 80))) bar="━━━━━━━━──" ;;
+  $((vol >= 70))) bar="━━━━━━━───" ;;
+  $((vol >= 60))) bar="━━━━━━────" ;;
+  $((vol >= 50))) bar="━━━━━─────" ;;
+  $((vol >= 40))) bar="━━━━──────" ;;
+  $((vol >= 30))) bar="━━━───────" ;;
+  $((vol >= 20))) bar="━━────────" ;;
+  $((vol >= 10))) bar="━─────────" ;;
+  $((vol >= 0))) bar="──────────" ;;
+  esac
+
+  echo "󰕾 $bar"
+}
+
+block_volmic() {
+  mic=""
+  _backends="amixer pactl wpctl"
+  for backend in $_backends; do
+    if _has "$backend"; then
+      mic="$(_volmic_"$backend")"
+      break
+    fi
+  done
+
+  [ -z "$mic" ] && return
+
+  case 1 in
+  $((mic >= 100))) bar="━━━━━━━━━━" ;;
+  $((mic >= 90))) bar="━━━━━━━━━─" ;;
+  $((mic >= 80))) bar="━━━━━━━━──" ;;
+  $((mic >= 70))) bar="━━━━━━━───" ;;
+  $((mic >= 60))) bar="━━━━━━────" ;;
+  $((mic >= 50))) bar="━━━━━─────" ;;
+  $((mic >= 40))) bar="━━━━──────" ;;
+  $((mic >= 30))) bar="━━━───────" ;;
+  $((mic >= 20))) bar="━━────────" ;;
+  $((mic >= 10))) bar="━─────────" ;;
+  $((mic >= 0))) bar="──────────" ;;
+  esac
+
+  echo "󰍬 $bar"
+}
+
+block_cpu() {
+  {
+    head -n1 /proc/stat
+    sleep 0.3
+    head -n1 /proc/stat
+  } | awk '/^cpu /{u=$2-u;s=$4-s;i=$5-i;w=$6-w}END{v=int(0.5+100*(u+s+w)/(u+s+i+w)); printf " %2d%%\n", (v>99?99:v)}'
+}
+
+block_ram() {
+  free --mebi | sed -n '2{p;q}' | awk '{printf (" %04.1fG", ( $3 / 1024), ($2 / 1024))}'
+}
+
+_keyboard_layout_xkbmap() {
+  setxkbmap -query | while read -r line; do
+    case "$line" in
+    layout*)
+      l="${line##* }"
+      printf "󰌌 %.2s" "$l"
+      break
+      ;;
+    esac
+  done
+}
+
+_keyboard_layout_swaymsg() {
+  swaymsg -t get_inputs | while read -r line; do
+    case "$line" in
+    *"xkb_active_layout_name"*)
+      l="${line##*"("}"
+      l="${l%%")"*}"
+      printf "󰌌 %.2s" "$l" | tr '[:upper:]' '[:lower:]'
+      break
+      ;;
+    esac
+  done
+}
+
+block_keyboard() {
+  if _has "setxkbmap"; then
+    _keyboard_layout_xkbmap
+    return
+  fi
+
+  # TODO: Check sway is running
+  if _has "swaymsg"; then
+    _keyboard_layout_swaymsg
+    return
+  fi
+
+  # TODO: Add more backends
+}
+
+block_kb() {
+  block_keyboard
+}
+
+block_net() {
+  ethdown=""
+  for eth in /sys/class/net/e*/operstate; do
+    while read -r line; do
+      case "$line" in
+      up)
+        # eth up
+        echo "󰛳"
+        return
+        ;;
+      down)
+        ethdown=1
+        ;;
+      esac
+    done <"$eth"
+  done
+
+  wup=""
+  wdown=""
+  for wint in /sys/class/net/w*/operstate; do
+    while read -r line; do
+      case "$line" in
+      up)
+        wup=1
+        ;;
+      down)
+        down=1
+        ;;
+      esac
+    done <"$wint"
+  done
+
+  if [ "$ethdown" ] && [ -z "$wdown" ] && [ -z "$wup" ]; then
+    # eth down and no wireless interfaces
+    echo "󰲛" && return
+  fi
+
+  if [ -z "$wup" ]; then
+    # no wireless interfaces are up
+    echo "󰤮" && return
+  fi
+
+  # at least one wireless int is up, get strength
+  strength="$(awk 'NR==3 {printf("%.0f\n",$3*10/7)}' /proc/net/wireless)"
+  case 1 in
+  $((strength >= 85))) icon="󰤨" ;;
+  $((strength >= 65))) icon="󰤥" ;;
+  $((strength >= 45))) icon="󰤢" ;;
+  $((strength >= 25))) icon="󰤟" ;;
+  $((strength >= 0))) icon="󰤯" ;;
+  esac
+
+  vpn=""
+  for v in /sys/class/net/tun*/operstate /sys/class/net/wg*/operstate; do
+    # a vpn is in use
+    [ -r "$v" ] && vpn=1 && break
+  done
+
+  if [ "$vpn" ]; then
+    case "$icon" in
+    "󰤨") icon="󰤪" ;;
+    "󰤥") icon="󰤧" ;;
+    "󰤢") icon="󰤤" ;;
+    "󰤟") icon="󰤡" ;;
+    "󰤯") icon="󰤬" ;;
+    esac
+  fi
+
+  # resulting icon
+  echo "$icon"
+}
+
+while true; do
+  status=""
+  for block in $SHSTATUS_BLOCKS; do
+    v="$(block_"$block")"
+    if [ "$v" ]; then
+      case "$status" in
+      "") status="$v" ;;
+      *) status="$status$SHSTATUS_SEPARATOR$v" ;;
+      esac
+    fi
+  done
+
+  echo "$status"
+
+  [ "$1" ] && exit
+
+  sleep "$SHSTATUS_INTERVAL"
+done
