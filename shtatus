@@ -2,7 +2,6 @@
 # shellcheck shell=sh
 
 # Choose what blocks to print
-# Available: vol mic cpu ram net bat kb time date
 : "${SHTATUS_BLOCKS:=vol cpu time date}"
 
 # Interval in seconds
