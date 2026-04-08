@@ -100,7 +100,7 @@ block_time() {
 _volume_amixer_by_type() {
   type="$1"
   [ -z "$type" ] && return
-  amixer get Master | while read -r line; do
+  amixer get "$type" | while read -r line; do
     case "$line" in
     *Playback*%*on*)
       vol="${line%%"%]"*}"
