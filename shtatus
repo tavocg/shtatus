@@ -2,7 +2,7 @@
 # shellcheck shell=sh
 
 # Choose what blocks to print
-: "${SHTATUS_BLOCKS:=volume volmic cpu ram net bat kb time date}"
+: "${SHTATUS_BLOCKS:=vol mic cpu ram net bat kb time date}"
 
 # Interval in seconds
 # The time to complete blocks is added to this interval,
@@ -97,11 +97,15 @@ block_time() {
   echo "󰥔 $(date "+$fmt")"
 }
 
-_volume_amixer_by_type() {
+_vol_amixer_by_type() {
   type="$1"
   [ -z "$type" ] && return
   amixer get "$type" | while read -r line; do
     case "$line" in
+    *Playback*%*off* | *Capture*%*off*)
+      echo mute
+      break
+      ;;
     *Playback*%* | *Capture*%*)
       vol="${line%%"%]"*}"
       vol="${vol##*"["}"
@@ -112,18 +116,25 @@ _volume_amixer_by_type() {
   done
 }
 
-_volume_amixer() {
-  _volume_amixer_by_type "Master"
+_vol_amixer() {
+  _vol_amixer_by_type "Master"
 }
 
-_volmic_amixer() {
-  _volume_amixer_by_type "Capture"
+_mic_amixer() {
+  _vol_amixer_by_type "Capture"
 }
 
-_volume_pactl_by_type() {
+_vol_pactl_by_type() {
   type="$1"
-  [ -z "$type" ] && return
-  pactl get-sink-volume "$type" | while read -r line; do
+  device="@DEFAULT_$(echo "$type" | tr '[:lower:]' '[:upper:]')@"
+  mute="$(pactl get-"$type"-mute "$device")"
+
+  if [ "${mute##* }" = "yes" ]; then
+    echo mute
+    return
+  fi
+
+  pactl get-"$type"-volume "$device" | while read -r line; do
     case "$line" in
     "Volume"*)
       lvl="${line%%%*}"
@@ -135,19 +146,23 @@ _volume_pactl_by_type() {
   done
 }
 
-_volume_pactl() {
-  _volume_pactl_by_type "@DEFAULT_SINK@"
+_vol_pactl() {
+  _vol_pactl_by_type "sink"
 }
 
-_volmic_pactl() {
-  _volume_pactl_by_type "@DEFAULT_CAPTURE@"
+_mic_pactl() {
+  _vol_pactl_by_type "source"
 }
 
-_volume_wpctl_by_type() {
+_vol_wpctl_by_type() {
   type="$1"
   [ -z "$type" ] && return
   wpctl get-volume "$type" | while read -r line; do
     case "$line" in
+    "Volume"*"[MUTED]")
+      echo mute
+      break
+      ;;
     "Volume: 1."*)
       lvl="${line##* }"
       echo "${lvl%%.*}${lvl##*.}"
@@ -162,25 +177,45 @@ _volume_wpctl_by_type() {
   done
 }
 
-_volume_wpctl() {
-  _volume_wpctl_by_type "@DEFAULT_SINK@"
+_vol_wpctl() {
+  _vol_wpctl_by_type "@DEFAULT_SINK@"
 }
 
-_volmic_wpctl() {
-  _volume_wpctl_by_type "@DEFAULT_SOURCE@"
+_mic_wpctl() {
+  _vol_wpctl_by_type "@DEFAULT_SOURCE@"
 }
 
-block_volume() {
+_vol_by_type() {
+  type="$1"
   vol=""
-  _backends="amixer pactl wpctl"
+  _backends="amixer wpctl pactl"
   for backend in $_backends; do
     if _has "$backend"; then
-      vol="$(_volume_"$backend")"
+      vol="$(_"$type"_"$backend")"
       break
     fi
   done
 
-  [ -z "$vol" ] && return
+  if [ -z "$vol" ]; then
+    return
+  fi
+
+  if [ "$vol" = "mute" ]; then
+    if [ "$type" = "vol" ]; then
+      echo "󰖁 ──────────"
+    fi
+
+    if [ "$type" = "mic" ]; then
+      echo "󰍭 ──────────"
+    fi
+
+    return
+  fi
+
+  case "$type" in
+  vol) icon="󰕾" ;;
+  mic) icon="󰍬" ;;
+  esac
 
   # This is meant to be a constant string
   # shellcheck disable=2194
@@ -198,38 +233,15 @@ block_volume() {
   $((vol >= 0))) bar="──────────" ;;
   esac
 
-  echo "󰕾 $bar"
+  echo "$icon $bar"
 }
 
-block_volmic() {
-  mic=""
-  _backends="amixer pactl wpctl"
-  for backend in $_backends; do
-    if _has "$backend"; then
-      mic="$(_volmic_"$backend")"
-      break
-    fi
-  done
+block_vol() {
+  _vol_by_type "vol"
+}
 
-  [ -z "$mic" ] && return
-
-  # This is meant to be a constant string
-  # shellcheck disable=2194
-  case 1 in
-  $((mic >= 100))) bar="━━━━━━━━━━" ;;
-  $((mic >= 90))) bar="━━━━━━━━━─" ;;
-  $((mic >= 80))) bar="━━━━━━━━──" ;;
-  $((mic >= 70))) bar="━━━━━━━───" ;;
-  $((mic >= 60))) bar="━━━━━━────" ;;
-  $((mic >= 50))) bar="━━━━━─────" ;;
-  $((mic >= 40))) bar="━━━━──────" ;;
-  $((mic >= 30))) bar="━━━───────" ;;
-  $((mic >= 20))) bar="━━────────" ;;
-  $((mic >= 10))) bar="━─────────" ;;
-  $((mic >= 0))) bar="──────────" ;;
-  esac
-
-  echo "󰍬 $bar"
+block_mic() {
+  _vol_by_type "mic"
 }
 
 block_cpu() {
