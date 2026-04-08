@@ -1,6 +1,6 @@
-# shstatus
+# shtatus
 
-Simple shell status line generator.
+Simple shell status line generator in pure POSIX shell (almost).
 
 ## Usage
 
