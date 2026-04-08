@@ -112,5 +112,5 @@ block_motd() {
 - [ ] Test in BSDs
 - [ ] Test with other shells
 - [ ] Test with other userland programs
-- [ ] Ability to use `text`, `emoji`, `nerd`, or `none` as SHTATUS_ICONS
+- [ ] Ability to use `text`, `emoji`, `nerd`, or `none` as `SHTATUS_ICONS`
       (specifically with text, use: `<module in caps> <value>`)
