@@ -16,10 +16,14 @@ Print once for testing by passing any argument:
 ./shstatus 1
 ```
 
-You can limit the blocks with `SHTATUS_BLOCKS`. For example, CPU only:
+- You can customize the blocks with `SHTATUS_BLOCKS`
+- The separator with `SHTATUS_SEPARATOR`
+- And interval in seconds with `SHTATUS_INTERVAL`
 
 ```sh
-SHTATUS_BLOCKS="cpu" ./shstatus
+SHTATUS_BLOCKS="cpu"    ./shstatus # default is "vol cpu time date"
+SHTATUS_SEPARATOR=" | " ./shstatus # default is "   "
+SHTATUS_INTERVAL=2      ./shstatus # default is 0.5
 ```
 
 ## Installation

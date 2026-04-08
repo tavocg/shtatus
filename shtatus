@@ -2,7 +2,8 @@
 # shellcheck shell=sh
 
 # Choose what blocks to print
-: "${SHTATUS_BLOCKS:=vol mic cpu ram net bat kb time date}"
+# Available: vol mic cpu ram net bat kb time date
+: "${SHTATUS_BLOCKS:=vol cpu time date}"
 
 # Interval in seconds
 # (note: total loop time includes both this
