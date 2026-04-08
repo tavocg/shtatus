@@ -351,8 +351,8 @@ block_keyboard() {
     return
   fi
 
-  # TODO: Check sway is running
   if _has "swaymsg"; then
+    # TODO: Check sway is actually running
     _keyboard_layout_swaymsg
     return
   fi
@@ -364,7 +364,27 @@ block_kb() {
   block_keyboard
 }
 
-block_net() {
+_net_linux_strength() {
+  line_no=0
+  while IFS= read -r line; do
+    line_no=$((line_no + 1))
+    if [ "$line_no" -lt 3 ]; then
+      continue
+    fi
+
+    set -- $line
+    link="$3"
+    if [ -z "$link" ]; then
+      return
+    fi
+
+    link="${link%%.*}"
+    echo $(((link * 10 + 3) / 7))
+    return
+  done </proc/net/wireless
+}
+
+_net_linux() {
   ethdown=""
   for eth in /sys/class/net/e*/operstate; do
     if [ -r "$eth" ]; then
@@ -411,7 +431,8 @@ block_net() {
   fi
 
   # at least one wireless int is up, get strength
-  strength="$(awk 'NR==3 {printf("%.0f\n",$3*10/7)}' /proc/net/wireless)"
+  strength="$(_net_linux_strength)"
+  [ -n "$strength" ] || return
 
   # This is meant to be a constant string
   # shellcheck disable=2194
@@ -441,6 +462,12 @@ block_net() {
 
   # resulting icon
   echo "$icon"
+}
+
+block_net() {
+  case "$os" in
+  linux) _net_linux ;;
+  esac
 }
 
 # taken from:
