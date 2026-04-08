@@ -79,7 +79,7 @@ SHTATUS_BLOCKS="motd" ./shtatus
 # Hello, World!
 ```
 
-Convention for helper functions is to prefix them `_<module>_<description>`
+Convention for helper functions is to name them `_<module>_<description>`
 
 For example:
 
