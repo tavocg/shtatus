@@ -61,7 +61,7 @@ chmod +x ~/.local/bin/shtatus
 
 Any status bar program that supports a custom command, for example:
 
-```sh
+```kdl (not quite kdl but works)
 # sway or i3
 bar {
   status_command SHTATUS_BLOCKS="vol mic cpu ram net bat kb time date" shtatus
