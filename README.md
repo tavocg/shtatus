@@ -57,6 +57,17 @@ chmod +x ~/.local/bin/shtatus
 | `time` | Current local time. | `🕙 10:24 AM` |
 | `date` | Current local date. | `📅 Tue 2026-04-08` |
 
+## Compatibility
+
+Any status bar program that supports a custom command, for example:
+
+```sh
+# sway or i3
+bar {
+  status_command SHTATUS_BLOCKS="vol mic cpu ram net bat kb time date" shtatus
+}
+```
+
 ## Adding a new module
 
 All module functions are prefixed `block_<module>`, just add a function that
