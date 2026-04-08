@@ -78,3 +78,20 @@ block_motd() {
 SHTATUS_BLOCKS="motd" ./shtatus
 # Hello, World!
 ```
+
+Convention for helper functions is to prefix them `_<module>_<description>`
+
+For example:
+
+```sh
+# shtatus
+# ...
+_motd_helper() {
+  echo "Hello, World!"
+}
+
+block_motd() {
+  _motd_helper
+}
+# ...
+```
