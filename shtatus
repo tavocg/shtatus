@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck shell=sh
 
 # Choose what blocks to print
 : "${SHTATUS_BLOCKS:=volume volmic cpu ram net bat kb time date}"
@@ -51,7 +52,7 @@ block_bat() {
 
   # This is meant to be a constant string
   # shellcheck disable=2194
-  case "1" in
+  case 1 in
   $((capacity >= 98))) icon="󰁹" ;;
   $((capacity >= 90))) icon="󰂂" ;;
   $((capacity >= 80))) icon="󰂁" ;;
@@ -181,6 +182,8 @@ block_volume() {
 
   [ -z "$vol" ] && return
 
+  # This is meant to be a constant string
+  # shellcheck disable=2194
   case 1 in
   $((vol >= 100))) bar="━━━━━━━━━━" ;;
   $((vol >= 90))) bar="━━━━━━━━━─" ;;
@@ -210,6 +213,8 @@ block_volmic() {
 
   [ -z "$mic" ] && return
 
+  # This is meant to be a constant string
+  # shellcheck disable=2194
   case 1 in
   $((mic >= 100))) bar="━━━━━━━━━━" ;;
   $((mic >= 90))) bar="━━━━━━━━━─" ;;
@@ -309,7 +314,7 @@ block_net() {
         wup=1
         ;;
       down)
-        down=1
+        wdown=1
         ;;
       esac
     done <"$wint"
@@ -327,6 +332,9 @@ block_net() {
 
   # at least one wireless int is up, get strength
   strength="$(awk 'NR==3 {printf("%.0f\n",$3*10/7)}' /proc/net/wireless)"
+
+  # This is meant to be a constant string
+  # shellcheck disable=2194
   case 1 in
   $((strength >= 85))) icon="󰤨" ;;
   $((strength >= 65))) icon="󰤥" ;;
