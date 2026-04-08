@@ -8,12 +8,17 @@ Run it continuously:
 
 ```sh
 ./shtatus
+# 󰕾 ━━━━━━━━──     1%   󰥔 09:35 AM   󰃮 Wed 2026-04-08
+# 󰕾 ━━━━━━━━──     1%   󰥔 09:35 AM   󰃮 Wed 2026-04-08
+# 󰕾 ━━━━━━━━──     1%   󰥔 09:35 AM   󰃮 Wed 2026-04-08
+# ...
 ```
 
 Print once for testing by passing any argument:
 
 ```sh
 ./shtatus 1
+# 󰕾 ━━━━━━━━──     1%   󰥔 09:35 AM   󰃮 Wed 2026-04-08
 ```
 
 - You can customize the blocks with `SHTATUS_BLOCKS`
@@ -21,9 +26,12 @@ Print once for testing by passing any argument:
 - And interval in seconds with `SHTATUS_INTERVAL`
 
 ```sh
-SHTATUS_BLOCKS="cpu"    ./shtatus # default is "vol cpu time date"
+SHTATUS_BLOCKS="cpu" ./shtatus # default is "vol cpu time date"
+#   1%
 SHTATUS_SEPARATOR=" | " ./shtatus # default is "   "
+# 󰕾 ━━━━━━━━── |   1% | 󰥔 09:35 AM | 󰃮 Wed 2026-04-08
 SHTATUS_INTERVAL=2      ./shtatus # default is 0.5
+# takes longer
 ```
 
 ## Modules
