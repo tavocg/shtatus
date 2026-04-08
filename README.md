@@ -1,6 +1,6 @@
 # shtatus
 
-Simple shell status line generator in pure POSIX shell (almost).
+Simple, hackable, shell status line generator in (almost) pure POSIX shell.
 
 ## Usage
 
@@ -26,15 +26,24 @@ Print once for testing by passing any argument:
 - And interval in seconds with `SHTATUS_INTERVAL`
 
 ```sh
-SHTATUS_BLOCKS="cpu" ./shtatus # default is "vol cpu time date"
+SHTATUS_BLOCKS="cpu"    ./shtatus # default is "vol cpu time date"
 # 🖥️  1%
+
 SHTATUS_SEPARATOR=" | " ./shtatus # default is "   "
 # 🔊 ━━━━━━━━── | 🖥️  1% | 🕘 09:35 AM | 📅 Wed 2026-04-08
+
 SHTATUS_INTERVAL=2      ./shtatus # default is 0.5
 # takes longer
 ```
 
-## Modules
+## Installation
+
+```sh
+curl -fsSL -o ~/.local/bin/shtatus raw.githubusercontent.com/tavocg/shtatus/refs/heads/main/shtatus
+chmod +x ~/.local/bin/shtatus
+```
+
+## Available modules
 
 | Module | What it does | Example output |
 | --- | --- | --- |
@@ -48,9 +57,24 @@ SHTATUS_INTERVAL=2      ./shtatus # default is 0.5
 | `time` | Current local time. | `🕙 10:24 AM` |
 | `date` | Current local date. | `📅 Tue 2026-04-08` |
 
-## Installation
+## Adding a new module
+
+All module functions are prefixed `block_<module>`, just add a function that
+prints something and use the module like so:
+`SHTATUS_BLOCKS="... <module>" ./shtatus`
+
+For example:
 
 ```sh
-curl -fsSL -o ~/.local/bin/shtatus raw.githubusercontent.com/tavocg/shtatus/refs/heads/main/shtatus
-chmod +x ~/.local/bin/shtatus
+# shtatus
+# ...
+block_motd() {
+  echo "Hello, World!"
+}
+# ...
+```
+
+```sh
+SHTATUS_BLOCKS="motd" ./shtatus
+# Hello, World!
 ```
